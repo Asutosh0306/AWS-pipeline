@@ -18,5 +18,220 @@ Install Oracle XE on the Machine
     GRANT SELECT ANY TABLE TO asutosh;
     GRANT LOGMINING TO asutosh;  -- For CDC[2]
 
+################################
+AWS DMS Setup (End-to-End Guide)
+################################
+
+a. Create a Replication Instance (Free Tier)
+Purpose: This acts as the "server" that performs the migration between Oracle and Aurora MySQL.
+
+Steps:
+
+Go to AWS DMS Console:
+
+Open the AWS Console, search for Database Migration Service (DMS), and click it.
+
+On the left menu, click Replication instances.
+
+Create a New Replication Instance:
+
+Click Create replication instance.
+
+Fill in:
+
+Name: dms-oracle-to-aurora (any unique name).
+
+Description: Optional (e.g., "Free tier instance for Oracle to Aurora").
+
+Instance class: dms.t3.micro (Free Tier eligible).
+
+Storage: 50 GB (Free Tier allows up to 50 GB).
+
+VPC: Choose the same VPC where your Aurora MySQL and Oracle DB (if in AWS) are located.
+
+If Oracle is on-premises, pick a VPC with public access or a VPC connected via VPN/Direct Connect.
+
+Publicly accessible: Yes (required if Oracle is on-premises).
+
+Advanced Settings:
+
+Multi-AZ: Uncheck (Free Tier only allows single-AZ).
+
+Enable auto minor version upgrade: Check (optional).
+
+Create the Instance:
+
+Click Create.
+
+Wait 5–10 minutes for the instance to become Available (status turns green).
+
+
+
+
+3b. Configure Source Endpoint (Oracle)
+Purpose: Connect AWS DMS to your Oracle database.
+
+Prerequisites:
+
+You’ve already granted SELECT ANY TABLE and LOGMINING to asutosh in Oracle (good!).
+
+Supplemental Logging must be enabled in Oracle for CDC (Change Data Capture):
+
+sql
+-- Run this in Oracle as admin:
+ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+ALTER SYSTEM SWITCH LOGFILE;
+Steps:
+
+Create Source Endpoint:
+
+In the DMS Console, go to Endpoints > Create endpoint.
+
+Endpoint type: Source.
+
+Endpoint identifier: oracle-source.
+
+Source engine: Oracle.
+
+Server name: 10.124.51.233 (Oracle IP).
+
+Port: 1521.
+
+SSL mode: None.
+
+Oracle connection details:
+
+User name: asutosh.
+
+Password: asutoshpassword.
+
+Database name: XEPDB1 (your PDB name).
+
+Advanced Settings:
+
+Use DirectPath (Oracle): Checked (improves performance).
+
+Add Column Name to Supplemental Logging: Yes (required for CDC).
+
+Test the Connection:
+
+Under Test endpoint connection, choose your replication instance (dms-oracle-to-aurora).
+
+Click Run test.
+
+Fix errors if any:
+
+Common issues:
+
+Security Group blocks port 1521: Ensure the replication instance’s security group allows outbound traffic to Oracle’s IP:Port.
+
+Oracle listener not configured for remote connections: Check Oracle’s tnsnames.ora and listener.ora.
+
+3c. Configure Target Endpoint (Aurora MySQL)
+Purpose: Connect AWS DMS to your Aurora MySQL database.
+
+Prerequisites:
+
+Aurora MySQL cluster is already created (you mentioned this is done).
+
+Aurora MySQL user permissions:
+
+sql
+-- Run this in Aurora MySQL as admin:
+GRANT ALTER, CREATE, DROP, INSERT, UPDATE, DELETE, SELECT ON *.* TO 'asutosh'@'%';
+FLUSH PRIVILEGES;
+Steps:
+
+Create Target Endpoint:
+
+In the DMS Console, go to Endpoints > Create endpoint.
+
+Endpoint type: Target.
+
+Endpoint identifier: aurora-mysql-target.
+
+Target engine: Amazon Aurora MySQL.
+
+Server name: Aurora Writer Endpoint (e.g., cluster-abc123.cluster-xyz.us-east-1.rds.amazonaws.com).
+
+Port: 3306.
+
+SSL mode: None.
+
+User name: Aurora MySQL admin username.
+
+Password: Aurora MySQL admin password.
+
+Test the Connection:
+
+Choose your replication instance (dms-oracle-to-aurora) and click Run test.
+
+Fix errors if any:
+
+Common issues:
+
+Aurora’s security group blocks inbound traffic: Allow port 3306 from the replication instance’s security group.
+
+3d. Schema Conversion
+Purpose: Convert Oracle schema (tables, data types) to MySQL-compatible schema.
+
+Steps:
+
+Download AWS Schema Conversion Tool (SCT):
+
+Go to AWS SCT Download and install it.
+
+Connect to Oracle (Source):
+
+Open AWS SCT > File > New Project.
+
+Source Database: Oracle.
+
+Hostname: 10.124.51.233.
+
+Port: 1521.
+
+Username: asutosh.
+
+Password: asutoshpassword.
+
+Service Name: XEPDB1 (your PDB).
+
+Click Test Connection > OK.
+
+Connect to Aurora MySQL (Target):
+
+Right-click Data Model Explorer > Add Target.
+
+Target Database: Amazon Aurora MySQL.
+
+Endpoint: Aurora writer endpoint.
+
+Port: 3306.
+
+Username: Aurora admin user.
+
+Password: Aurora admin password.
+
+Click Test Connection > OK.
+
+Convert Schema:
+
+Right-click your Oracle schema > Convert Schema.
+
+Apply Data Type Mappings:
+
+NUMBER → DECIMAL(38,0) (for integer-like columns).
+
+VARCHAR2 → VARCHAR(4000).
+
+Review Warnings: Fix any issues (e.g., unsupported functions).
+
+Apply Schema to Aurora MySQL:
+
+Go to File > Apply to Database > Choose Aurora MySQL.
+
+Click Apply.
+
 
 
