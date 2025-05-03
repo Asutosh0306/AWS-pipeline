@@ -1,1 +1,12 @@
 Install Oracle XE on the Machine
+ - Download Oracle Database 21c Express Edition (XE) from Oracle’s website.
+ - Install with default settings. Note the password you set for the SYS and SYSTEM accounts. password: 0plmzaq1
+  - > lsnrctl status  // to get host and port names
+  setup: Open sql plus
+    Enter user-name: / as sysdba
+    SQL> select name from v$pdbs;
+    SQL> connect sys/0plmzaq1@10.124.51.233:1521/XEPDB1 as sysdba;
+    SQL> create user asutosh identified by asutoshpassword default tablespace users quota unlimited on users;
+    SQL> grant create session, create table to asutosh;
+
+    
