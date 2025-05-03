@@ -26,46 +26,29 @@ a. Create a Replication Instance (Free Tier)
 Purpose: This acts as the "server" that performs the migration between Oracle and Aurora MySQL.
 
 Steps:
-
 Go to AWS DMS Console:
-
 Open the AWS Console, search for Database Migration Service (DMS), and click it.
-
 On the left menu, click Replication instances.
-
 Create a New Replication Instance:
-
 Click Create replication instance.
 
 Fill in:
-
 Name: dms-oracle-to-aurora (any unique name).
-
 Description: Optional (e.g., "Free tier instance for Oracle to Aurora").
-
 Instance class: dms.t3.micro (Free Tier eligible).
-
 Storage: 50 GB (Free Tier allows up to 50 GB).
-
 VPC: Choose the same VPC where your Aurora MySQL and Oracle DB (if in AWS) are located.
 
 If Oracle is on-premises, pick a VPC with public access or a VPC connected via VPN/Direct Connect.
-
 Publicly accessible: Yes (required if Oracle is on-premises).
 
 Advanced Settings:
-
 Multi-AZ: Uncheck (Free Tier only allows single-AZ).
-
 Enable auto minor version upgrade: Check (optional).
-
 Create the Instance:
 
 Click Create.
-
 Wait 5–10 minutes for the instance to become Available (status turns green).
-
-
 
 
 3b. Configure Source Endpoint (Oracle)
