@@ -18,3 +18,5 @@ Install Oracle XE on the Machine
     GRANT SELECT ANY TABLE TO asutosh;
     GRANT LOGMINING TO asutosh;  -- For CDC[2]
 
+
+
